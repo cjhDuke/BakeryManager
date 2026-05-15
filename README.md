@@ -36,8 +36,9 @@ C++ CourseDesign
 │   ├── FileManager.cpp       商品和销售文件读写
 │   ├── Utils.h               工具函数声明
 │   └── Utils.cpp             日期、输入、字符串处理等工具函数
-├── products.txt              商品信息数据文件
-├── sales.txt                 销售记录数据文件
+├── data                      数据文件夹
+│   ├── products.txt          商品信息数据文件
+│   └── sales.txt             销售记录数据文件
 ├── 设计思路.md
 └── 课程设计要求与第八任务整理.md
 ```
@@ -57,7 +58,7 @@ g++ -std=c++17 -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=UTF-8 src\main
 如果只想快速编译，也可以使用：
 
 ```powershell
-g++ -std=c++17 src\main.cpp -o bakery.exe
+g++ src\main.cpp -o bakery.exe
 .\bakery.exe
 ```
 
@@ -82,7 +83,7 @@ chcp 65001
 
 ## 五、数据文件格式
 
-### 1. 商品信息文件 `products.txt`
+### 1. 商品信息文件 `data/products.txt`
 
 每行保存一个商品，字段之间用 `|` 分隔：
 
@@ -96,7 +97,7 @@ chcp 65001
 P001|红豆面包|2026-05-13|2026-05-16|20
 ```
 
-### 2. 销售记录文件 `sales.txt`
+### 2. 销售记录文件 `data/sales.txt`
 
 每行保存一条销售记录，字段之间用 `|` 分隔：
 
@@ -112,7 +113,8 @@ R001|P001|红豆面包|2026-05-13|2026-05-16|2026-05-14|6.50|0.90|2
 
 ## 六、运行注意事项
 
-- `products.txt` 和 `sales.txt` 会在程序运行目录下读取和保存。
+- `data/products.txt` 和 `data/sales.txt` 会在程序运行目录下的 `data` 文件夹中读取和保存。
+- 如果 `data` 文件夹不存在，程序启动或保存时会自动创建。
 - 如果文件不存在，程序会提示读取失败，并从空数据开始。
 - 添加、修改、删除商品或销售记录后，程序会自动保存文件。
 - 登记销售记录时会检查商品是否存在、销售日期是否合法、数量是否超过库存。
@@ -141,4 +143,3 @@ g++ src\*.cpp -o bakery.exe
 ```powershell
 g++ -std=c++17 src\main.cpp -o bakery.exe
 ```
-

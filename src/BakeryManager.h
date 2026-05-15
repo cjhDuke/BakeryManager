@@ -15,16 +15,25 @@ public:
     void run();
 
 private:
-    const string PRODUCT_FILE = "products.txt";
-    const string SALE_FILE = "sales.txt";
+    string DATA_DIR;
+    string PRODUCT_FILE;
+    string SALE_FILE;
     ProductList products;
     AVLTree sales;
 
+    bool fileHasData(string filename);
+    void initDataPath();
+    void ensureDataDirectory();
+    void seedDataFiles();
     string trimText(string s);
     string readString();
     int readInt();
     double readDouble();
     double getSaleTotal(SaleRecord record);
+    int textWidth(string s);
+    string formatCell(string s, int width);
+    string formatInt(int value, int width);
+    string formatDouble(double value, int width);
 
     void printProductHeader();
     void printProduct(Product product);

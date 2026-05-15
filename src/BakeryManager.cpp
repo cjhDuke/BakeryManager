@@ -1,14 +1,94 @@
 #include <bits/stdc++.h>
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#include <sys/types.h>
+#endif
 #include "BakeryManager.h"
 using namespace std;
 
 // 构造管理类对象，启动时读取商品和销售文件
 BakeryManager::BakeryManager()
 {
+    initDataPath();
+    ensureDataDirectory();
+    seedDataFiles();
     if (!FileManager::loadProducts(products, PRODUCT_FILE))
         cout << "商品文件读取失败，将从空商品表开始。" << endl;
     if (!FileManager::loadSales(sales, SALE_FILE))
         cout << "销售文件读取失败，将从空销售记录开始。" << endl;
+}
+
+// 判断文件是否存在且至少有一行有效数据
+bool BakeryManager::fileHasData(string filename)
+{
+    ifstream in(filename);
+    if (!in.is_open())
+        return false;
+
+    string line;
+    while (getline(in, line))
+    {
+        if (!trimText(line).empty())
+            return true;
+    }
+    return false;
+}
+
+// 初始化数据文件夹路径，优先使用已有数据的 data 目录
+void BakeryManager::initDataPath()
+{
+    vector<string> candidates = {"data", "../data", "../../data", "../../../data"};
+    DATA_DIR = "data";
+
+    for (string dir : candidates)
+    {
+        if (fileHasData(dir + "/products.txt") || fileHasData(dir + "/sales.txt"))
+        {
+            DATA_DIR = dir;
+            break;
+        }
+    }
+
+    PRODUCT_FILE = DATA_DIR + "/products.txt";
+    SALE_FILE = DATA_DIR + "/sales.txt";
+}
+
+// 确保 data 数据文件夹存在
+void BakeryManager::ensureDataDirectory()
+{
+#ifdef _WIN32
+    _mkdir(DATA_DIR.c_str());
+#else
+    mkdir(DATA_DIR.c_str(), 0755);
+#endif
+}
+
+// 当数据文件不存在或为空时写入演示数据
+void BakeryManager::seedDataFiles()
+{
+    if (!fileHasData(PRODUCT_FILE))
+    {
+        ofstream out(PRODUCT_FILE);
+        out << "P001|红豆面包|2026-05-10|2026-05-17|48\n";
+        out << "P002|奶油吐司|2026-05-11|2026-05-18|35\n";
+        out << "P003|肉松小贝|2026-05-12|2026-05-16|26\n";
+        out << "P004|全麦欧包|2026-05-09|2026-05-20|40\n";
+        out << "P005|巧克力可颂|2026-05-13|2026-05-17|30\n";
+        out << "P006|芝士蛋糕|2026-05-12|2026-05-19|18\n";
+    }
+
+    if (!fileHasData(SALE_FILE))
+    {
+        ofstream out(SALE_FILE);
+        out << "R001|P001|红豆面包|2026-05-10|2026-05-17|2026-05-14|6.50|0.90|4\n";
+        out << "R002|P002|奶油吐司|2026-05-11|2026-05-18|2026-05-14|12.00|1.00|2\n";
+        out << "R003|P003|肉松小贝|2026-05-12|2026-05-16|2026-05-14|8.80|0.85|3\n";
+        out << "R004|P004|全麦欧包|2026-05-09|2026-05-20|2026-05-15|15.00|0.95|2\n";
+        out << "R005|P005|巧克力可颂|2026-05-13|2026-05-17|2026-05-15|9.50|0.90|5\n";
+        out << "R006|P006|芝士蛋糕|2026-05-12|2026-05-19|2026-05-15|18.00|0.88|1\n";
+    }
 }
 
 // 去掉字符串首尾空白字符
@@ -72,60 +152,112 @@ double BakeryManager::getSaleTotal(SaleRecord record)
     return record.getPrice() * record.getDiscount() * record.getQuantity();
 }
 
+// 计算字符串在控制台中的显示宽度
+int BakeryManager::textWidth(string s)
+{
+    int width = 0;
+    for (int i = 0; i < (int)s.size();)
+    {
+        unsigned char ch = (unsigned char)s[i];
+        if (ch < 128)
+        {
+            width++;
+            i++;
+        }
+        else
+        {
+            width += 2;
+            if ((ch & 0xE0) == 0xC0)
+                i += 2;
+            else if ((ch & 0xF0) == 0xE0)
+                i += 3;
+            else if ((ch & 0xF8) == 0xF0)
+                i += 4;
+            else
+                i++;
+        }
+    }
+    return width;
+}
+
+// 将字符串按显示宽度补齐到指定列宽
+string BakeryManager::formatCell(string s, int width)
+{
+    int blank = width - textWidth(s);
+    if (blank < 1)
+        blank = 1;
+    return s + string(blank, ' ');
+}
+
+// 将整数转换成指定列宽的字符串
+string BakeryManager::formatInt(int value, int width)
+{
+    return formatCell(to_string(value), width);
+}
+
+// 将小数转换成保留两位并指定列宽的字符串
+string BakeryManager::formatDouble(double value, int width)
+{
+    stringstream ss;
+    ss << fixed << setprecision(2) << value;
+    return formatCell(ss.str(), width);
+}
+
 // 输出商品表头
 void BakeryManager::printProductHeader()
 {
-    cout << left << setw(15) << "商品号"
-         << setw(20) << "商品名称"
-         << setw(15) << "制作日期"
-         << setw(15) << "有效期"
-         << setw(10) << "库存" << endl;
+    cout << formatCell("商品号", 12)
+         << formatCell("商品名称", 18)
+         << formatCell("制作日期", 14)
+         << formatCell("有效期", 14)
+         << formatCell("库存", 8) << endl;
 }
 
 // 输出一条商品信息
 void BakeryManager::printProduct(Product product)
 {
-    cout << left << setw(15) << product.getId()
-         << setw(20) << product.getName()
-         << setw(15) << product.getMakeDate()
-         << setw(15) << product.getValidDate()
-         << setw(10) << product.getStock() << endl;
+    cout << formatCell(product.getId(), 12)
+         << formatCell(product.getName(), 18)
+         << formatCell(product.getMakeDate(), 14)
+         << formatCell(product.getValidDate(), 14)
+         << formatInt(product.getStock(), 8) << endl;
 }
 
 // 输出销售记录表头
 void BakeryManager::printSaleHeader()
 {
-    cout << left << setw(12) << "记录号"
-         << setw(15) << "商品号"
-         << setw(20) << "商品名称"
-         << setw(15) << "制作日期"
-         << setw(15) << "有效期"
-         << setw(15) << "销售日期"
-         << setw(10) << "售价"
-         << setw(10) << "折扣"
-         << setw(10) << "数量"
-         << setw(12) << "总价" << endl;
+    cout << formatCell("记录号", 10)
+         << formatCell("商品号", 12)
+         << formatCell("商品名称", 18)
+         << formatCell("制作日期", 14)
+         << formatCell("有效期", 14)
+         << formatCell("销售日期", 14)
+         << formatCell("售价", 10)
+         << formatCell("折扣", 8)
+         << formatCell("数量", 8)
+         << formatCell("总价", 10) << endl;
 }
 
 // 输出一条销售记录
 void BakeryManager::printSale(SaleRecord record)
 {
     Product product = record.getProduct();
-    cout << left << setw(12) << record.getId()
-         << setw(15) << product.getId()
-         << setw(20) << product.getName()
-         << setw(15) << product.getMakeDate()
-         << setw(15) << product.getValidDate()
-         << setw(15) << record.getSaleDate()
-         << setw(10) << fixed << setprecision(2) << record.getPrice()
-         << setw(10) << fixed << setprecision(2) << record.getDiscount()
-         << setw(10) << record.getQuantity()
-         << setw(12) << fixed << setprecision(2) << getSaleTotal(record) << endl;
+    cout << formatCell(record.getId(), 10)
+         << formatCell(product.getId(), 12)
+         << formatCell(product.getName(), 18)
+         << formatCell(product.getMakeDate(), 14)
+         << formatCell(product.getValidDate(), 14)
+         << formatCell(record.getSaleDate(), 14)
+         << formatDouble(record.getPrice(), 10)
+         << formatDouble(record.getDiscount(), 8)
+         << formatInt(record.getQuantity(), 8)
+         << formatDouble(getSaleTotal(record), 10) << endl;
 }
 
 // 保存商品和销售记录到文件
 void BakeryManager::saveAll()
 {
+    ensureDataDirectory();
     if (!FileManager::saveProducts(products, PRODUCT_FILE))
         cout << "商品信息保存失败。" << endl;
     if (!FileManager::saveSales(sales, SALE_FILE))
@@ -734,15 +866,15 @@ void BakeryManager::statisticSales()
         statistics[key].second += getSaleTotal(record);
     }
 
-    cout << left << setw(18) << (op == 1 ? "商品号" : "销售日期")
-         << setw(12) << "销售数量"
-         << setw(12) << "销售总额" << endl;
+    cout << formatCell(op == 1 ? "商品号" : "销售日期", 18)
+         << formatCell("销售数量", 12)
+         << formatCell("销售总额", 12) << endl;
 
     for (auto item : statistics)
     {
-        cout << left << setw(18) << item.first
-             << setw(12) << item.second.first
-             << setw(12) << fixed << setprecision(2) << item.second.second << endl;
+        cout << formatCell(item.first, 18)
+             << formatInt(item.second.first, 12)
+             << formatDouble(item.second.second, 12) << endl;
     }
 }
 
@@ -758,7 +890,8 @@ void BakeryManager::exportTodaySales()
         return;
     }
 
-    string filename = "export_" + saleDate + ".txt";
+    ensureDataDirectory();
+    string filename = DATA_DIR + "/export_" + saleDate + ".txt";
     if (FileManager::exportTodaySales(sales, saleDate, filename))
         cout << "导出成功，文件名: " << filename << endl;
     else
