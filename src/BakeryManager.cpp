@@ -39,18 +39,7 @@ bool BakeryManager::fileHasData(string filename)
 // 初始化数据文件夹路径，优先使用已有数据的 data 目录
 void BakeryManager::initDataPath()
 {
-    vector<string> candidates = {"data", "../data", "../../data", "../../../data"};
-    DATA_DIR = "data";
-
-    for (string dir : candidates)
-    {
-        if (fileHasData(dir + "/products.txt") || fileHasData(dir + "/sales.txt"))
-        {
-            DATA_DIR = dir;
-            break;
-        }
-    }
-
+    DATA_DIR = FileManager::getDataDirectory();
     PRODUCT_FILE = DATA_DIR + "/products.txt";
     SALE_FILE = DATA_DIR + "/sales.txt";
 }

@@ -11,7 +11,7 @@ struct TreeNode
     int height;
     TreeNode *left;
     TreeNode *right;
-    TreeNode(SaleRecord record) : data(record), height(1), left(nullptr), right(nullptr) {}
+    TreeNode(SaleRecord record) : data(record), height(1), left(nullptr), right(nullptr) {} // 用销售记录初始化 AVL 树节点
 };
 
 #endif

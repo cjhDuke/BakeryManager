@@ -25,6 +25,31 @@ static double getSaleTotal(SaleRecord record)
     return record.getPrice() * record.getDiscount() * record.getQuantity();
 }
 
+// 判断路径对应的文件是否存在
+static bool fileExists(string filename)
+{
+    ifstream in(filename);
+    return in.good();
+}
+
+// 获取项目根目录下的 data 文件夹路径，避免从不同目录运行时写到错误位置
+string FileManager::getDataDirectory()
+{
+    vector<string> roots = {".", "..", "../..", "../../.."};
+
+    for (string root : roots)
+    {
+        if (fileExists(root + "/src/main.cpp"))
+        {
+            if (root == ".")
+                return "data";
+            return root + "/data";
+        }
+    }
+
+    return "data";
+}
+
 // 从商品文件读取数据并加入商品链表
 bool FileManager::loadProducts(ProductList &products, string filename)
 {
