@@ -1,0 +1,24 @@
+# 编译输出
+build/
+
+# codex缓存
+codex/
+
+# 测试
+tests/
+
+# requirements
+requirements/
+
+# exe
+*.exe
+
+# vscode
+.vscode/
+
+# 临时文件
+*.tmp
+*.log
+
+#claude code
+*.claude/
